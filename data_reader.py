@@ -10,9 +10,9 @@ import shutil
 import subprocess
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 import keras
+import rasterio
 
 from generator import generator_from_lists
-from create_mask import create_mask
 
 class TrainDataRepresentation:
     def __init__(self, train_generator, steps_per_epoch, validation_data, validation_steps, callbacks, output):
@@ -24,19 +24,19 @@ class TrainDataRepresentation:
         self. output = output
 
 class DataRepresentaion:
-    def __init__(self, data_path):
-        self.data_path = data_path
-
-
+    def __init__(self, ln):
+        self.data = np.zeros(ln)
+    def add(self, image, i):
+        self.data[i] = image
 
 class DataReader:
     def __init__(self, data_sourse, output, ma_exist = False):
-        self.data_sourse = data_sourse
+        self.data = data_sourse
         self.ma_exist = ma_exist
         self.output = output
 
     def unzip(self):
-        output = os.path.join(self.data_sourse, 'decompressed')
+        output = os.path.join(self.data, 'decompressed')
         os.makedirs(output, exist_ok = True)
         patches = os.path.join(output, 'patches')
         mask = os.path.join(output, 'mask')
@@ -44,29 +44,11 @@ class DataReader:
         os.makedirs(mask, exist_ok = True)
         zipfile.ZipFile(os.path.join(self.data_sourse, 'patches', 'landsat_patches.zip')).extractall(patches)
         zipfile.ZipFile(os.path.join(self.data_sourse, 'patches', 'landsat_patches.zip')).extractall(mask)
-        self.data = output
         if (self.ma_exist):
-            ma_data = os.path.join(self.data, 'manually_annotated')
+            ma_data = os.path.join(output, 'manually_annotated')
             os.makedirs(ma_data, exist_ok = True)
-            zipfile.ZipFile(os.path.join(self.data_sourse, 'patches', 'manual_annotations_patches.zip')).extractall(ma_data)
-
-    def unzip_allinone(self):
-        self.data = os.path.join(self.data_sourse, 'decompressed')
-        for zip_name in os.walk(self.data_sourse)[2]:
-            os.makedirs(self.data, exist_ok = True)
-            patches = os.path.join(self.data, 'patches')
-            mask = os.path.join(self.data, 'mask')
-            os.makedirs(patches, exist_ok = True)
-            os.makedirs(mask, exist_ok = True)
-            zipfile.ZipFile(os.path.join(self.data_sourse, zip_name)).extractall(patches)
-            meta = glob.glob(os.path.join(patches, '*MTL.txt'))
-            create_mask(meta, mask)
-
-            to_del = glob.glob(os.path.join(patches, '*.txt'))
-            for file in to_del:
-                os.remove(file)
-            to_del = glob.glob(os.path.join(patches, '*.xml'))
-            os.remove(to_del[0])
+            zipfile.ZipFile(os.path.join(self.data, 'patches', 'manual_annotations_patches.zip')).extractall(ma_data)
+        self.data = output
 
     def create_csv(self):
         MASK_ALGORITHM = 'Kumar-Roy'
@@ -139,5 +121,10 @@ class DataReader:
             [checkpoint, es],
             self.output
         )
-    def get_data_path(self):
-        return DataReader(self.data)
+    def get_data(self):
+        library = os.walk(os.path.join(self.data, 'patches'))[0][2]
+        ln = len(library)
+        data = DataRepresentaion(ln)
+        for i in range(0, ln):
+            data.add(rasterio.open(os.path.join(self.data, 'patches', library[i])).read().transpose((1, 2, 0)), i)
+        return data
