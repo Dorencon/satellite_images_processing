@@ -24,7 +24,9 @@ class TrainDataRepresentation:
         self. output = output
 
 class DataRepresentaion:
-    def __init__(self):
+    def __init__(self, data_path):
+        self.data_path = data_path
+
 
 
 class DataReader:
@@ -137,10 +139,5 @@ class DataReader:
             [checkpoint, es],
             self.output
         )
-    def get_data(self):
-        x_train = pd.read_csv(os.path.join(self.data, 'images_train.csv'))
-        y_train = pd.read_csv(os.path.join(self.data, 'masks_train.csv'))
-        x_val = pd.read_csv(os.path.join(self.data, 'images_val.csv'))
-        y_val = pd.read_csv(os.path.join(self.data, 'masks_val.csv'))
-        x_test = pd.read_csv(os.path.join(self.data, 'images_test.csv'))
-        y_test = pd.read_csv(os.path.join(self.data, 'masks_test.csv'))
+    def get_data_path(self):
+        return DataReader(self.data)
