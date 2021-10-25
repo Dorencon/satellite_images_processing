@@ -24,16 +24,20 @@ class TrainDataRepresentation:
         self. output = output
 
 class DataRepresentaion:
-    def __init__(self, ln):
+    def __init__(self, ln, ma_exist = False):
         self.data = np.zeros(ln)
+        if ma_exist:
+            self.ma_data = np.zeros(ln)
     def add(self, image, i):
         self.data[i] = image
+    def add_ma(self, image, i):
+        self.ma_data[i] = image
 
 class DataReader:
     def __init__(self, data_sourse, output, ma_exist = False):
         self.data = data_sourse
-        self.ma_exist = ma_exist
         self.output = output
+        self.ma_exist = ma_exist
 
     def unzip(self):
         output = os.path.join(self.data, 'decompressed')
@@ -122,9 +126,17 @@ class DataReader:
             self.output
         )
     def get_data(self):
-        library = os.walk(os.path.join(self.data, 'patches'))[0][2]
+        library = []
+        for i in os.walk(os.path.join(self.data, 'patches')):
+            library.append(i)
+        library = library[0][2]
         ln = len(library)
-        data = DataRepresentaion(ln)
+        data = DataRepresentaion(ln, ma_exist)
         for i in range(0, ln):
+            file = os.path.splitext(os.path.basename(os.path.join((self.data, 'patches', library[i]))))
+            if file[1] != '.tif':
+                raise ValueError("Неподходящий тип файла")
             data.add(rasterio.open(os.path.join(self.data, 'patches', library[i])).read().transpose((1, 2, 0)), i)
+            if ma_exist:
+                data.add_ma(rasterio.open(os.path.join(self.data, 'manually_annotated', library[i])).read.transpose((1, 2, 0)), i)
         return data
