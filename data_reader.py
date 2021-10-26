@@ -21,11 +21,12 @@ class TrainDataRepresentation:
         self.validation_data = validation_data
         self.validation_steps = validation_steps
         self.callbacks = callbacks
-        self. output = output
+        self.output = output
 
 class DataRepresentaion:
-    def __init__(self, ln, ma_exist = False):
+    def __init__(self, ln, model_path, ma_exist = False):
         self.data = np.zeros(ln)
+        self.model_path = model_path
         if ma_exist:
             self.ma_data = np.zeros(ln)
     def add(self, image, i):
@@ -34,9 +35,10 @@ class DataRepresentaion:
         self.ma_data[i] = image
 
 class DataReader:
-    def __init__(self, data_sourse, output, ma_exist = False):
+    def __init__(self, data_sourse, output, model_path, ma_exist = False):
         self.data = data_sourse
         self.output = output
+        self.model_path = model_path
         self.ma_exist = ma_exist
 
     def unzip(self):
@@ -131,7 +133,7 @@ class DataReader:
             library.append(i)
         library = library[0][2]
         ln = len(library)
-        data = DataRepresentaion(ln, ma_exist)
+        data = DataRepresentaion(ln, self.model_path, ma_exist)
         for i in range(0, ln):
             file = os.path.splitext(os.path.basename(os.path.join((self.data, 'patches', library[i]))))
             if file[1] != '.tif':
