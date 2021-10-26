@@ -50,8 +50,8 @@ class DataReader:
         mask = os.path.join(output, 'mask')
         os.makedirs(patches, exist_ok = True)
         os.makedirs(mask, exist_ok = True)
-        zipfile.ZipFile(os.path.join(self.data_sourse, 'patches', 'landsat_patches.zip')).extractall(patches)
-        zipfile.ZipFile(os.path.join(self.data_sourse, 'patches', 'landsat_patches.zip')).extractall(mask)
+        zipfile.ZipFile(os.path.join(self.data, 'patches', 'landsat_patches.zip')).extractall(patches)
+        zipfile.ZipFile(os.path.join(self.data, 'patches', 'landsat_patches.zip')).extractall(mask)
         if (self.ma_exist):
             ma_data = os.path.join(output, 'manually_annotated')
             os.makedirs(ma_data, exist_ok = True)
@@ -129,6 +129,7 @@ class DataReader:
             [checkpoint, es],
             self.output
         )
+        
     def get_data(self):
         library = []
         for i in os.walk(os.path.join(self.data, 'patches')):
@@ -140,7 +141,7 @@ class DataReader:
             file = os.path.splitext(os.path.basename(os.path.join((self.data, 'patches', library[i]))))
             if file[1] != '.tif':
                 raise ValueError("Неподходящий тип файла")
-            data.add(rasterio.open(os.path.join(self.data, 'patches', library[i])).read().transpose((1, 2, 0)), i)
-            if ma_exist:
-                data.add_ma(rasterio.open(os.path.join(self.data, 'manually_annotated', library[i])).read.transpose((1, 2, 0)), i)
+            #data.add(rasterio.open(os.path.join(self.data, 'patches', library[i])).read().transpose((1, 2, 0)), i)
+            #if ma_exist:
+                #data.add_ma(rasterio.open(os.path.join(self.data, 'manually_annotated', library[i])).read().transpose((1, 2, 0)), i)
         return data
