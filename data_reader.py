@@ -46,24 +46,19 @@ class DataReader:
     def unzip(self):
         output = os.path.join(self.data, 'decompressed')
         os.makedirs(output, exist_ok = True)
-        patches = os.path.join(output, 'patches')
-        mask = os.path.join(output, 'mask')
-        os.makedirs(patches, exist_ok = True)
-        os.makedirs(mask, exist_ok = True)
-        zipfile.ZipFile(os.path.join(self.data, 'patches', 'landsat_patches.zip')).extractall(patches)
-        zipfile.ZipFile(os.path.join(self.data, 'patches', 'landsat_patches.zip')).extractall(mask)
-        if (self.ma_exist):
-            ma_data = os.path.join(output, 'manually_annotated')
-            os.makedirs(ma_data, exist_ok = True)
-            zipfile.ZipFile(os.path.join(self.data, 'patches', 'manual_annotations_patches.zip')).extractall(ma_data)
+        with zipfile.ZipFile(os.path.join(self.data, 'patches', 'landsat_patches.zip')) as zip:
+            zip.extract(os.path.join('patches', ''), output)
+            zip.extract(os.path.join('mask', ''), output)
+            if (self.ma_exist):
+                zip.extract(os.path.join('manually_annotated', ''), output)
         self.data = output
 
-    def create_csv(self):
+    '''def create_csv(self):
         MASK_ALGORITHM = 'Kumar-Roy'
 
         os.makedirs(os.path.join(self.data, 'csv'), exist_ok = True)
         masks = glob.glob(os.path.join(self.data, 'mask', '*{}*.tif'.format(MASK_ALGORITHM)))
-        with open(os.path.join(self.data, 'images_masks.csv', 'w')) as f:
+        with open(os.path.join(self.data, 'images_masks.csv'), 'w') as f:
             writer = csv.writer(f, delimiter = ',')
             for mask in tqdm(masks):
                 _, mask_name = os.path.split(mask)
@@ -128,7 +123,7 @@ class DataReader:
             len(images_validation),
             [checkpoint, es],
             self.output
-        )
+        )'''
         
     def get_data(self):
         library = []
