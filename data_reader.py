@@ -12,8 +12,6 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 import keras
 import rasterio
 
-from generator import generator_from_lists
-
 class TrainDataRepresentation:
     def __init__(self, train_generator, steps_per_epoch, validation_data, validation_steps, callbacks, output):
         self.train_generator = train_generator
@@ -24,16 +22,11 @@ class TrainDataRepresentation:
         self.output = output
 
 class DataRepresentaion:
-    def __init__(self, ln, model_path, weight_path, ma_exist = False):
-        self.data = np.zeros(ln, dtype = object)
-        self.model_path = model_path
-        self.weight_path = weight_path
+    def __init__(self, data, meta, ma_exist = False, ma_data = None):
+        self.data = data
+        self.meta = meta
         if ma_exist:
-            self.ma_data = np.zeros(ln, dtype = object)
-    def add(self, image, i):
-        self.data[i] = image
-    def add_ma(self, image, i):
-        self.ma_data[i] = image
+            self.ma_data = ma_data
 
 class DataReader:
     def __init__(self, data_sourse, output, model_path, weight_path, ma_exist = False):
@@ -49,6 +42,7 @@ class DataReader:
         with zipfile.ZipFile(os.path.join(self.data, 'patches', 'landsat_patches.zip')) as zip:
             zip.extract(os.path.join('patches', ''), output)
             zip.extract(os.path.join('mask', ''), output)
+            zip.extract(os.path.join('metadata', ''), output)
             if (self.ma_exist):
                 zip.extract(os.path.join('manually_annotated', ''), output)
         self.data = output
@@ -125,18 +119,22 @@ class DataReader:
             self.output
         )'''
         
-    def get_data(self):
-        library = []
+    def create_library(self):
+        self.library = []
         for i in os.walk(os.path.join(self.data, 'patches')):
-            library.append(i)
-        library = library[0][2]
-        ln = len(library)
-        data = DataRepresentaion(ln, self.model_path, self.weight_path, self.ma_exist)
-        for i in range(0, ln):
-            file = os.path.splitext(library[i])
-            if file[1] != '.tif':
-                raise ValueError("Неподходящий тип файла")
-            data.add(rasterio.open(os.path.join(self.data, 'patches', library[i])).read().transpose((1, 2, 0)), i)
-            if self.ma_exist:
-                data.add_ma(rasterio.open(os.path.join(self.data, 'manually_annotated', library[i])).read().transpose((1, 2, 0)), i)
-        return data
+            self.library.append(i)
+        self.library = self.library[0][2]
+        
+    def get_data(self, index):
+        ln = len(self.library)
+        if index >= ln:
+            raise RuntimeError("Запрос несуществующего файла")
+        file = os.path.splitext(self.library[index])
+        if file[1] != '.tif':
+            raise ValueError("Неподходящий тип файла")
+        image = rasterio.open(os.path.join(self.data, 'patches', self.library[index])).read().transpose((1, 2, 0))
+        meta = open(os.path.join(self.data, 'metadata', file[0] + '.txt'))
+        if self.ma_exist:
+            ma_data = rasterio.open(os.path.join(self.data, 'manually_annotated', self.library[index])).read().transpose((1, 2, 0))
+            return DataRepresentaion(image, meta, True, ma_data)
+        return DataRepresentaion(image, meta)
