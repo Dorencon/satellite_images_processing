@@ -25,11 +25,11 @@ class TrainDataRepresentation:
 
 class DataRepresentaion:
     def __init__(self, ln, model_path, weight_path, ma_exist = False):
-        self.data = np.zeros(ln)
+        self.data = np.zeros(ln, dtype = object)
         self.model_path = model_path
         self.weight_path = weight_path
         if ma_exist:
-            self.ma_data = np.zeros(ln)
+            self.ma_data = np.zeros(ln, dtype = object)
     def add(self, image, i):
         self.data[i] = image
     def add_ma(self, image, i):
@@ -136,12 +136,12 @@ class DataReader:
             library.append(i)
         library = library[0][2]
         ln = len(library)
-        data = DataRepresentaion(ln, self.model_path, self.weight_path, ma_exist)
+        data = DataRepresentaion(ln, self.model_path, self.weight_path, self.ma_exist)
         for i in range(0, ln):
-            file = os.path.splitext(os.path.basename(os.path.join((self.data, 'patches', library[i]))))
+            file = os.path.splitext(library[i])
             if file[1] != '.tif':
                 raise ValueError("Неподходящий тип файла")
-            #data.add(rasterio.open(os.path.join(self.data, 'patches', library[i])).read().transpose((1, 2, 0)), i)
-            #if ma_exist:
-                #data.add_ma(rasterio.open(os.path.join(self.data, 'manually_annotated', library[i])).read().transpose((1, 2, 0)), i)
+            data.add(rasterio.open(os.path.join(self.data, 'patches', library[i])).read().transpose((1, 2, 0)), i)
+            if self.ma_exist:
+                data.add_ma(rasterio.open(os.path.join(self.data, 'manually_annotated', library[i])).read().transpose((1, 2, 0)), i)
         return data
